@@ -39,11 +39,11 @@ int main()
         swap(str + i, str + len - i - 1);
         #else
         char c = str[i];
-        str[i] = str[len - i - 1];
-        str[len - i - 1] = c;
+        str[i] = str[len-i-1];
+        str[len-i-1] = c;
         #endif
 
-        printf("..swap [%d]='%c' with [%d]='%c' -> %s\n", i, str[i], len - i - 1, str[len - i - 1], str);
+        printf("..swap [%d]='%c' with [%d]='%c' -> %s\n", i, str[i], len-i-1, str[len-i-1], str);
     }
 
     // print result
