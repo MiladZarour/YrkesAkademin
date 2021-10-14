@@ -12,13 +12,16 @@ Reversed string: FEDCBA
 */
 
 #define ARR_SIZE 255
+#define USE_SWAP 0
 
+#if USE_SWAP
 void swap(char *a, char *b)
 {
     char c = *a;
     *a = *b;
     *b = c;
 }
+#endif
 
 int main()
 {
@@ -31,7 +34,17 @@ int main()
     // reverse the text
     int len = strlen(str);
     for(int i=0; i<len/2; i++)
-        swap(str+i, str+len-i-1);
+    {
+        #if USE_SWAP
+        swap(str + i, str + len - i - 1);
+        #else
+        char c = str[i];
+        str[i] = str[len - i - 1];
+        str[len - i - 1] = c;
+        #endif
+
+        printf("..swap [%d]='%c' with [%d]='%c' -> %s\n", i, str[i], len - i - 1, str[len - i - 1], str);
+    }
 
     // print result
     printf("Reversed:\n%s\n", str);
