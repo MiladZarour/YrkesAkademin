@@ -1,0 +1,1 @@
+clear && gcc exercise-20.c -Wall -o out && ./out "Text passed as an argument" "Another text" 25 55 "Final argument"
