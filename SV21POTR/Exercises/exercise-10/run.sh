@@ -1,1 +1,1 @@
-clear && gcc exercise-10.c -Wall -o main && ./main
+clear && gcc exercise-10.c -Wall -o out && ./out
