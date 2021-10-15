@@ -10,6 +10,9 @@ static uint32_t EXER_BUFFER;
 #define MSG_START 25
 #define MSG_END 10
 
+#define MSG_MASK 0x03FFFC00
+#define CHK_MASK 0xFC000000
+
 /*
 4 checksum bits, 2 zero bits, 16 bits for message, 2 zero bits, 8 bits for flags
 
@@ -37,15 +40,19 @@ Delete the message in the sender, if need to.
 Try and make it so, setting flags is easy
 */
 
-typedef enum
+typedef enum FLAG
 {
-    F_ONOFF = 0x0001,
+    F_ON = 0x0001,
     F_SENDING = 0x0002,
     F_KEEP_MSG = 0x0004,
     F_USE_CHECKSUM = 0x0008,
 } flag_t;
 
-uint8_t get_checksum(uint32_t x)
+/********************************************
+Checksum functions
+********************************************/
+
+uint8_t calc_checksum(uint32_t x)
 {
     // checksum in message placed between bits 10-25
     uint8_t chksum = 0;
@@ -55,17 +62,54 @@ uint8_t get_checksum(uint32_t x)
     return chksum;
 }
 
+uint8_t get_checksum(uint32_t reg)
+{
+    return (reg & CHK_MASK) >> 28;
+}
+
+void set_checksum(uint32_t *reg, uint8_t chksum)
+{
+    *reg &= ~CHK_MASK;
+    *reg |= ((uint32_t)chksum) << 28; 
+}
+
+/********************************************
+Message functions
+********************************************/
+
 uint16_t get_message(uint32_t reg)
 {
-    reg &= 0x03FFFFFF; // kill 6 bits on the left
-    reg >>= 10; // move the message to the right end
+    reg &= MSG_MASK;
+    reg >>= MSG_END; 
     return reg;
 }
+
+void set_message(uint32_t *reg, uint16_t msg)
+{
+    *reg &= ~MSG_MASK; 
+    *reg |= ((uint32_t)msg)<<MSG_END;
+}
+
+/********************************************
+Flag functions
+********************************************/
 
 bool get_flag(uint32_t reg, flag_t flag)
 {
     return (reg&flag) != 0;
 }
+
+void set_flag(uint32_t *reg, flag_t flag, bool on)
+{
+    if(on)
+        *reg |= flag;
+    else
+        *reg &= ~flag;
+}
+
+/********************************************
+Testing/debugging functions
+********************************************/
 
 void print_register(uint32_t reg)
 {
@@ -89,30 +133,14 @@ void print_register(uint32_t reg)
 
 void print_values(uint32_t reg)
 {
-    uint8_t chk = get_checksum(reg);
+    uint8_t chk = calc_checksum(reg);
     uint16_t msg = get_message(reg);
-    bool onoff = get_flag(msg, F_ONOFF);
-    bool send = get_flag(msg, F_SENDING);
-    bool keep = get_flag(msg, F_KEEP_MSG);
-    bool usechk = get_flag(msg, F_USE_CHECKSUM);
+    bool on = get_flag(reg, F_ON);
+    bool send = get_flag(reg, F_SENDING);
+    bool keep = get_flag(reg, F_KEEP_MSG);
+    bool usechk = get_flag(reg, F_USE_CHECKSUM);
 
-    printf("[%4u]    [  %6u = 0x%04X  ]    [flags: USECHK=%d KEEP=%d SND=%d ONOFF=%d]\n", chk, msg, msg, usechk, keep, send, onoff);
-}
-
-
-
-bool send(uint32_t *sender, uint32_t *buffer)
-{
-    bool status = false;
-    //use *sender to access the variable
-    return status;
-}
-
-bool get(uint32_t *receiver, uint32_t *buffer)
-{
-    bool status = false;
-    //use *receiver to access the variable
-    return status;
+    printf("[%4u] << [  %6u = 0x%04X  ]    [flags: USECHK=%d KEEP=%d SND=%d ON=%d]\n", chk, msg, msg, usechk, keep, send, on);
 }
 
 void print_test(uint32_t reg, const char *txt)
@@ -123,13 +151,55 @@ void print_test(uint32_t reg, const char *txt)
     printf("\n");
 }
 
+
+/********************************************
+Original exercise functions, ready to edit
+********************************************/
+
+bool send(uint32_t *sender, uint32_t *buffer)
+{
+    bool status = false;
+
+    // reset
+    *buffer = 0;
+
+    // add message
+    *buffer |= (*sender) & MSG_MASK;
+    *buffer |= (uint32_t)calc_checksum(*sender) << 28;
+
+    // set flag CHKS
+    *buffer |= F_USE_CHECKSUM;
+
+    status = true;
+    return status;
+}
+
+bool get(uint32_t *receiver, uint32_t *buffer)
+{
+    bool status = false;
+    //use *receiver to access the variable
+    return status;
+}
+
 int main(void)
 {
-    print_test(0xFC0003FF, "Calculate cheksum for EMPTY message"); 
-    print_test(0x03FFFC00, "Calculate cheksum for FULL message"); 
-    print_test(0x02AAA800, "Try zig-zag values for message"); 
+    print_test(MSG_MASK, "Calculate cheksum for FULL message"); 
+    print_test(~MSG_MASK, "Calculate cheksum for EMPTY message"); 
+    print_test(0x02AAA800, "Try zig-zag values for message");
 
+    EXER_REGISTER_SENDER = 0;
+    EXER_REGISTER_RECEIVER = 0;
+    EXER_BUFFER = 0;
 
+    /*
+    Store the message in one register calculate the checksum, sending it to a buffer.
+    Then get the message from the buffer using the other register, verifying and printing it out.
+
+    Remember to send along the checksum, if you need to.
+    Delete the message in the sender, if need to.
+
+    Try and make it so, setting flags is easy
+    */
 
     if (send(&EXER_REGISTER_SENDER, &EXER_BUFFER))
     {
