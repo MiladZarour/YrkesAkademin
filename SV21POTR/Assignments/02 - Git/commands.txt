@@ -1,0 +1,89 @@
+Git Assignment
+Version Control Systems and Strategies
+In this assignment there are totally 20 requests and you should answer all
+of them using git and bash commands. To get G(godkänd), you need to have at
+least 15 correct answers and to get VG(välgodkänd), you should correctly answer
+all of them. Please note that the submission deadline is 2021-10-10 23:59.
+
+Git (answer only using git and bash commands)
+
+1.Create a directory namedrepoand in the directorycreate a repository.
+mkdir repo
+cd repo
+git init
+
+2.Create the .gitignorefile for your repository andadd it to the staging area.
+touch .gitignore
+git add .gitignore
+
+3.Check the status of the repository.
+git status
+
+4.Commit the changes with the message “Initial commit”.
+git commit -m "initial commit"
+
+5.Create an empty repository on Github and add the remote repository to your local repository.
+GitHub -> Create repository -> https://github.com/BorisBug/assignment-02.git
+git remote add origin https://github.com/BorisBug/assignment-2.git
+
+6.Push all the changes to the remote repository.
+git push -u origin master
+
+7.Create a new branch (develop) and push it to the remote repository.
+git branch develop
+git push --all
+
+8.Switch to develop and create the main.c file for your repo and stage it.
+git switch develop
+touch main.c
+git add main.c
+
+9.Commit the changes with the message “Second commit”.
+git commit -m "second commit"
+
+10.Change the message of the last commit to “Added the source file”.
+git commit --amend -m "added source file"
+
+11.Pull the repository from the remote and then push all the changes to the remote repository.
+git switch master
+git pull --all 
+git push -u origin develop
+
+12.Show the log of your commits (short form of the commitIDs).
+git log --oneline
+
+13.Merge the develop branch into the master/main branch and tag (v1.0) the last commit.
+git switch master
+git merge develop
+git tag v1.0
+
+14.Delete the develop branch and push all the changes to the remote repository.
+git branch -d develop
+git push -d origin develop
+git push --tags
+
+15.Create the README.md file of your repo and commit it with the message “Added README.md”.
+touch README.md
+git add README.md
+git commit -m "added README.md"
+
+16.Move and annotate the created tag (v1.0) to the last commit with the message “First version”.
+git tag -fa v1.0 -m "first version"
+
+17.Change the message of the commit with the message “Added the source file” to “Added main.c”
+git rebase -i --root (..or HEAD~3)
+...edit file: reword
+
+18.Move the tag (v1.0) to the last commit and push all the changes to the remote repository.
+git tag -f v1.0
+git push --tags
+
+19.Delete the commit with the message “Added main.c”.
+git reflog
+git rebase -i --root
+...edit file: drop
+
+20.Move the tag (v1.0) to the last commit and push all the changes to the remote repository.
+git tag -f v1.0
+git push
+git push --tags
