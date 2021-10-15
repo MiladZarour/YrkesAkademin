@@ -13,31 +13,21 @@ To change and print the string use only pointers.
 
 char* toggle(char *str)
 {
-    char *p = str;
-
-    while(p && *p)
-    {
+    for(char *p=str; p && *p; p++)
         if(isalpha(*p))
-        {
-            if(isupper(*p))
-                *p = tolower(*p);
-            else
-                *p = toupper(*p);
-        }
-
-        p++;
-    }
+            *p = isupper(*p) ? tolower(*p) : toupper(*p);
 
     return str;
 }
 
 int main(int argc, char *argv[])
 {
-    printf("Argument count: %d\n", argc);
+    printf("Argument count: %d\n\n", argc);
+    
     for(int i=0; i<argc; i++)
     {
         printf("Argument value[%d]: %s\n", i, argv[i]);
-        printf("Argument toggled: %s\n\n", toggle(argv[i]));
+        printf("Argument toggled:  %s\n\n", toggle(argv[i]));
     }
 
     return 0;
