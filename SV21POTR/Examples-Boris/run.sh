@@ -1,0 +1,1 @@
+clear && gcc byte.c -o out && ./out

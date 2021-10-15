@@ -1,0 +1,21 @@
+git switch develop
+git pull
+git checkout develop -b issue-xx 
+——
+edit file & save
+——
+git add .
+git commit -m “issue-xx”
+git push -u origin issue-xx
+
+
+// merge the issue
+git switch develop
+git merge issue-xx
+
+// delete the branch & push the delete to the origin
+git branch -d issue-xx
+git push -d origin issue-xx
+
+
+
