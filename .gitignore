@@ -1,5 +1,13 @@
 out
 main
+
+Resources
+
+.dSYM
+.vscode
+.plist
+.json
+
 !*.c
 !*.h
 !*.sh
