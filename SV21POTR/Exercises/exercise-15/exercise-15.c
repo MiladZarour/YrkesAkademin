@@ -29,14 +29,16 @@ int main()
 
     // get the text
     printf("Enter a text:\n");
-    gets(str); // use gets just for the sake of simplicity. The focus is on reversing!
+    fgets(str, ARR_SIZE, stdin); // use gets just for the sake of simplicity. The focus is on reversing!
 
     // reverse the text
     int len = strlen(str);
+    str[--len] = 0;
+
     for(int i=0; i<len/2; i++)
     {
         #if USE_SWAP
-        swap(str + i, str + len - i - 1);
+        swap(str+i, str+len-i-1);
         #else
         char c = str[i];
         str[i] = str[len-i-1];
