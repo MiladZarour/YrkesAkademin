@@ -12,6 +12,10 @@ The century year is a leap year only if it is perfectly divisible by 400.
 If the year is a leap year, then February 29, is the leap day.
 */
 
+/*
+Same logic as exercise-18 but now modified to act on a string 
+*/
+
 #define SHOW_LOG 1
 
 typedef struct DATETIME
@@ -141,22 +145,15 @@ bool verify_range(level_t level, unsigned number, const datetime_t *dt)
     return false;
 }
 
-bool verify_delimiter_n(level_t level, char c, char *valid, unsigned number)
+bool verify_delimiter_n(level_t level, char c, char valid, unsigned number)
 {
-    if (strchr(valid, c))
+    if(valid==c)
         return true;
 
     #if SHOW_LOG
-    // quick fix the '\n' delimiter into something visible
-    // TODO: make it better!
-    char txt[20] = {0};
-    if (strchr(valid, '\n'))
-        strcpy(txt, "\\n (enter)");
-    else
-        txt[0] = valid[0];
-
+    // check exercise-18 for more info
     //printf("..level %d error -> %s: expected delimiter '%c' after number %d\n", level, LVL_NAME[level], valid, number);
-    printf("..error: expected %s delimiter '%s' after number %d\n", LVL_NAME[level], txt, number);
+    printf("..error: expected %s delimiter '%c' after number %d\n", LVL_NAME[level], valid, number);
     #endif
 
     return false;
@@ -170,17 +167,17 @@ bool verify_delim(level_t level, char delim, unsigned number)
     {
     case L_YYYY:
     case L_MM:
-        return verify_delimiter_n(level, delim, "-", number);
+        return verify_delimiter_n(level, delim, '-', number);
 
     case L_DD:
-        return verify_delimiter_n(level, delim, " ", number);
+        return verify_delimiter_n(level, delim, ' ', number);
 
     case L_HH: 
     case L_mm:
-        return verify_delimiter_n(level, delim, ":", number);
+        return verify_delimiter_n(level, delim, ':', number);
 
     case L_ss:
-        return verify_delimiter_n(level, delim, "\n ", number);
+        return verify_delimiter_n(level, delim, '\0', number);
 
     case L_OK:
         return true;
@@ -213,18 +210,16 @@ bool set_datetime_value(level_t level, datetime_t *dt, unsigned number)
 // issue: is it OK to have time without seconds ?
 // --> for the sake of simplicity we validate TRUE only with a complete FULL FORMAT
 
-int main()
+bool parse_dt(datetime_t *dt, const char* str)
 {
     unsigned c, number=0, digits=0;
     level_t level = L_YYYY;
-    datetime_t dt = {0};
+    int len = strlen(str);
 
-    printf("Enter date and time [YYYY-MM-DD HH:mm:ss]:\n");
-
-    // stay in the loop until is finished, or internal error/break
-    while (level!=L_OK)
+    // note the i<=len (i use the null as a delimiter)
+    for(int i=0; level!=L_OK && i<=len; i++)
     {
-        c = getchar();
+        c = str[i];
 
         // if is digit
         if (isdigit(c))
@@ -236,7 +231,7 @@ int main()
         // if valid number (verify everything)
         else 
         if (verify_digits(level, digits) &&     // verify: amount of digits
-            verify_range(level, number, &dt) && // verify: range of the number
+            verify_range(level, number, dt) &&  // verify: range of the number
             verify_delim(level, c, number))     // verify: delimiter is the correct for the level
         {
             #if SHOW_LOG
@@ -245,7 +240,7 @@ int main()
             #endif
 
             // update the result DT structure
-            set_datetime_value(level, &dt, number);
+            set_datetime_value(level, dt, number);
 
             // prepare to build a new number
             number = 0;
@@ -261,7 +256,19 @@ int main()
         }
     }
 
-    if (level == L_OK)
+    return level == L_OK;
+}
+
+int main()
+{
+    datetime_t dt = {0};
+    printf("Enter date and time [YYYY-MM-DD HH:mm:ss]:\n");
+
+    char str[200];
+    fgets(str, 200, stdin);
+    str[strlen(str)-1] = 0;
+    
+    if(parse_dt(&dt,str))
     {
         printf("The format is valid!\n");
         printf("Result after parsing: %4u-%02u-%02u %02d:%02d:%02d\n",
