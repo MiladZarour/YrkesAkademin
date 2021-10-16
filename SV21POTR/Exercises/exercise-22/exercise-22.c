@@ -152,11 +152,7 @@ bool verify_delimiter_n(level_t level, char c, char *valid, unsigned number)
         return true;
 
     #if SHOW_LOG
-    // TODO: make it better!
-    char tmp[20] = {0};
-    tmp[0] = valid[0];
-    //printf("..level %d error -> %s: expected delimiter '%c' after number %d\n", level, LVL_NAME[level], valid, number);
-    printf("..error: expected %s delimiter '%s' after number %d\n", LVL_NAME[level], tmp, number);
+    printf("..error: expected %s delimiter '%s' after number %d\n", LVL_NAME[level], valid, number);
     #endif
 
     return false;
