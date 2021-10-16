@@ -145,15 +145,18 @@ bool verify_range(level_t level, unsigned number, const datetime_t *dt)
     return false;
 }
 
-bool verify_delimiter_n(level_t level, char c, char valid, unsigned number)
+bool verify_delimiter_n(level_t level, char c, char *valid, unsigned number)
 {
-    if(valid==c)
+    // we take the NULL as a valid delimiter for all levels
+    if (c==0 || strchr(valid, c))
         return true;
 
     #if SHOW_LOG
-    // check exercise-18 for more info
+    // TODO: make it better!
+    char tmp[20] = {0};
+    tmp[0] = valid[0];
     //printf("..level %d error -> %s: expected delimiter '%c' after number %d\n", level, LVL_NAME[level], valid, number);
-    printf("..error: expected %s delimiter '%c' after number %d\n", LVL_NAME[level], valid, number);
+    printf("..error: expected %s delimiter '%s' after number %d\n", LVL_NAME[level], tmp, number);
     #endif
 
     return false;
@@ -167,17 +170,17 @@ bool verify_delim(level_t level, char delim, unsigned number)
     {
     case L_YYYY:
     case L_MM:
-        return verify_delimiter_n(level, delim, '-', number);
+        return verify_delimiter_n(level, delim, "-\n", number);
 
     case L_DD:
-        return verify_delimiter_n(level, delim, ' ', number);
+        return verify_delimiter_n(level, delim, " \n", number);
 
     case L_HH: 
     case L_mm:
-        return verify_delimiter_n(level, delim, ':', number);
+        return verify_delimiter_n(level, delim, ":\n", number);
 
     case L_ss:
-        return verify_delimiter_n(level, delim, '\0', number);
+        return verify_delimiter_n(level, delim, " \n", number);
 
     case L_OK:
         return true;
@@ -212,14 +215,31 @@ bool set_datetime_value(level_t level, datetime_t *dt, unsigned number)
 
 bool parse_dt(datetime_t *dt, const char* str)
 {
+    assert(str);
+
     unsigned c, number=0, digits=0;
     level_t level = L_YYYY;
     int len = strlen(str);
 
+    // trim right
+    while(str[len-1]==' ')
+        len--;
+
+    // trim left
+    while(*str==' ')
+        str++, len--;
+
+    #if SHOW_LOG
+    char tmp[50];
+    strcpy(tmp, str);
+    tmp[len] = 0;
+    printf("Parsing: %s\n", tmp);
+    #endif
+
     // note the i<=len (i use the null as a delimiter)
     for(int i=0; level!=L_OK && i<=len; i++)
     {
-        c = str[i];
+        c = i==len ? 0 : str[i];
 
         // if is digit
         if (isdigit(c))
@@ -256,6 +276,23 @@ bool parse_dt(datetime_t *dt, const char* str)
         }
     }
 
+    // missing TIME
+    if(level == L_HH)
+    {
+        #if SHOW_LOG
+        printf("..level %d warning -> parsing truncated, missing values for TIME\n", level);
+        #endif
+        return true;
+    }
+    else // missing SECONDS
+    if(level == L_ss)
+    {
+        #if SHOW_LOG
+        printf("..level %d warning -> parsing truncated, missing value for SECONDS\n", level);
+        #endif
+        return true;
+    }
+
     return level == L_OK;
 }
 
@@ -271,7 +308,7 @@ int main()
     if(parse_dt(&dt,str))
     {
         printf("The format is valid!\n");
-        printf("Result after parsing: %4u-%02u-%02u %02d:%02d:%02d\n",
+        printf("Result after parsing: %u-%02u-%02u %02d:%02d:%02d\n",
                 dt.year, dt.month, dt.day, dt.hour, dt.min, dt.sec);
     }
     else

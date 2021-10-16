@@ -1,1 +1,3 @@
-clear && gcc exercise-18.c -Wall -o out && ./out
+clear
+gcc exercise-22.c -Wall -o out
+./out
