@@ -15,6 +15,11 @@ void my_function(int *p)
     *p += 5;
 }
 
+void say_value(int a)
+{
+    printf("Value of a is %d\n", a);
+}
+
 int main()
 {
 // 1) Create two pointers pa and pb to int a = 5; char b = ’s’;
@@ -35,9 +40,8 @@ int main()
     printf("After my_function.. a=%i\n", a);
 
 // 4) Create a function pointer, funcptr, to the following function and execute it.
-    void (*ptr_function)(int*) = my_function; // declare & initialize
-    ptr_function(pa); // execute
-    printf("After ptr_function.. a=%i\n", a);
+    void (*ptr_function)(int) = say_value; // declare & initialize
+    ptr_function(a); // execute
 
     return 0;
 }
