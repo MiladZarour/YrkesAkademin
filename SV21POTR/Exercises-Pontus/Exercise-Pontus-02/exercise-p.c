@@ -10,8 +10,9 @@ static uint32_t EXER_BUFFER;
 #define MSG_START 25
 #define MSG_END 10
 
-#define MSG_MASK 0x03FFFC00
-#define CHK_MASK 0xFC000000
+#define MASK_MSG 0x03FFFC00
+#define MASK_CHKS 0xFC000000
+#define MASK_FLAGS 0x000000FF
 
 /*
 4 checksum bits, 2 zero bits, 16 bits for message, 2 zero bits, 8 bits for flags
@@ -52,26 +53,16 @@ typedef enum FLAG
 Checksum functions
 ********************************************/
 
-uint8_t calc_checksum(uint32_t x)
+uint32_t calc_checksum(uint32_t x)
 {
     // checksum in message placed between bits 10-25
-    uint8_t chksum = 0;
+    uint32_t chksum = 0;
     for(int i=MSG_START; i>=MSG_END; i--)
         chksum += (x>>i)&1 ? 1 : 0;
 
-    return chksum;
+    return chksum << 28;
 }
 
-uint8_t get_checksum(uint32_t reg)
-{
-    return (reg & CHK_MASK) >> 28;
-}
-
-void set_checksum(uint32_t *reg, uint8_t chksum)
-{
-    *reg &= ~CHK_MASK;
-    *reg |= ((uint32_t)chksum) << 28; 
-}
 
 /********************************************
 Message functions
@@ -79,14 +70,14 @@ Message functions
 
 uint16_t get_message(uint32_t reg)
 {
-    reg &= MSG_MASK;
+    reg &= MASK_MSG;
     reg >>= MSG_END; 
     return reg;
 }
 
 void set_message(uint32_t *reg, uint16_t msg)
 {
-    *reg &= ~MSG_MASK; 
+    *reg &= ~MASK_MSG; 
     *reg |= ((uint32_t)msg)<<MSG_END;
 }
 
@@ -133,8 +124,8 @@ void print_register(uint32_t reg)
 
 void print_values(uint32_t reg)
 {
-    uint8_t chk = calc_checksum(reg);
-    uint16_t msg = get_message(reg);
+    uint32_t chk = calc_checksum(reg) >> 28;
+    uint32_t msg = get_message(reg);
     bool on = get_flag(reg, F_ON);
     bool send = get_flag(reg, F_SENDING);
     bool keep = get_flag(reg, F_KEEP_MSG);
@@ -156,6 +147,18 @@ void print_test(uint32_t reg, const char *txt)
 Original exercise functions, ready to edit
 ********************************************/
 
+/*
+uint32_t get_checksum(uint32_t reg)
+{
+    return (reg & MASK_CHKS);
+}
+
+void set_checksum(uint32_t *reg, uint32_t chksum)
+{
+    *reg &= ~MASK_CHKS;
+    *reg |= chksum; 
+}*/
+
 bool send(uint32_t *sender, uint32_t *buffer)
 {
     bool status = false;
@@ -164,12 +167,16 @@ bool send(uint32_t *sender, uint32_t *buffer)
     *buffer = 0;
 
     // add message
-    *buffer |= (*sender) & MSG_MASK;
-    *buffer |= (uint32_t)calc_checksum(*sender) << 28;
+    *buffer |= (*sender) & MASK_MSG;
 
-    // set flag CHKS
+    // add checksum
+    *buffer |= calc_checksum(*sender);
+
+    // set flags
     *buffer |= F_USE_CHECKSUM;
+    *buffer |= F_SENDING;
 
+    // harcoded ?
     status = true;
     return status;
 }
@@ -177,17 +184,40 @@ bool send(uint32_t *sender, uint32_t *buffer)
 bool get(uint32_t *receiver, uint32_t *buffer)
 {
     bool status = false;
-    //use *receiver to access the variable
+
+    if(get_flag(*buffer, F_USE_CHECKSUM) && (calc_checksum(*buffer) != (*buffer&MASK_CHKS)))
+    {
+        status = false;
+    }
+    else
+    {
+        status = true;
+
+        // reset
+        *receiver = 0;
+
+        // add message
+        *receiver |= (*buffer) & MASK_MSG;
+
+        // add flags
+        *receiver |= (*buffer) & MASK_FLAGS;
+
+        // basically we could just do
+        // *receiver = *buffer
+    }
+
     return status;
 }
 
 int main(void)
 {
-    print_test(MSG_MASK, "Calculate cheksum for FULL message"); 
-    print_test(~MSG_MASK, "Calculate cheksum for EMPTY message"); 
+    print_test(MASK_MSG, "Calculate cheksum for FULL message");
+    printf("..note how the CHKS becomes 0 because of overflow.. correct?\n\n");
+
+    print_test(~MASK_MSG, "Calculate cheksum for EMPTY message"); 
     print_test(0x02AAA800, "Try zig-zag values for message");
 
-    EXER_REGISTER_SENDER = 0;
+    EXER_REGISTER_SENDER = 0x02AAA800; // MASK_MSG;
     EXER_REGISTER_RECEIVER = 0;
     EXER_BUFFER = 0;
 
@@ -201,11 +231,15 @@ int main(void)
     Try and make it so, setting flags is easy
     */
 
+    print_test(EXER_REGISTER_SENDER, "Sending ...");
+
     if (send(&EXER_REGISTER_SENDER, &EXER_BUFFER))
     {
+        print_test(EXER_BUFFER, "In buffer ...");
+
         if (get(&EXER_REGISTER_RECEIVER, &EXER_BUFFER))
         {
-            //print relevant things
+            print_test(EXER_REGISTER_RECEIVER, "Received ...");
         }
     }
 
