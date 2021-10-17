@@ -16,7 +16,7 @@ be returned; otherwise -1.
 
 #define ARR_SIZE 15
 
-int find_value(int *arr, int size, int value)
+int find_value(int *arr, unsigned size, int value)
 {
     for (int i = 0; i < size; i++)
         if(value == arr[i])
@@ -25,7 +25,7 @@ int find_value(int *arr, int size, int value)
     return -1;
 }
 
-int calc_largest(int *arr, int size)
+int calc_largest(int *arr, unsigned size)
 {
     int max = INT32_MIN;
     for (unsigned i = 0; i < size; i++)
@@ -35,7 +35,7 @@ int calc_largest(int *arr, int size)
     return max;
 }
 
-double calc_average(int *arr, int size)
+double calc_average(int *arr, unsigned size)
 {
     double avg = 0.;
     for (unsigned i = 0; i < size; i++)
@@ -44,16 +44,16 @@ double calc_average(int *arr, int size)
     return size > 0 ? avg / size : 0;
 }
 
-void rand_unique_arr(int *arr, int size)
+void rand_unique_arr(int *arr, unsigned size)
 {
     srand(time(0));
     for (int i = 0; i < size; i++)
         do {
             arr[i] = rand() % 1000;
-        } while (find_value(arr, i-1, arr[i]) >= 0);
+        } while (i>0 && find_value(arr, i-1, arr[i]) >= 0);
 }
 
-void print_arr(const int *arr, int size)
+void print_arr(const int *arr, unsigned size)
 {
     printf("{");
     for (int i = 0; i < size; i++)
