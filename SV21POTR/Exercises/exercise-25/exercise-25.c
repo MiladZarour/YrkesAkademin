@@ -11,7 +11,7 @@ Example: An array filled with random numbers: {9, 3, 8, 0, 5, 2, 6, 7, 1, 4}
 
 #define ARR_SIZE 15
 
-int find_arr(int *arr, int size, int x)
+int find_arr(int *arr, unsigned size, int x)
 {
     for (int i = 0; i < size; i++)
         if(x == arr[i])
@@ -20,16 +20,16 @@ int find_arr(int *arr, int size, int x)
     return -1;
 }
 
-void rand_unique_arr(int *arr, int size)
+void rand_unique_arr(int *arr, unsigned size)
 {
     srand(time(0));
     for (int i = 0; i < size; i++)
         do {
             arr[i] = rand() % 1000;
-        } while (find_arr(arr, i-1, arr[i]) >= 0);
+        } while (i>0 && find_arr(arr, i-1, arr[i]) >= 0);
 }
 
-void print_arr(const int *arr, int size)
+void print_arr(const int *arr, unsigned size)
 {
     printf("{");
     for (int i = 0; i < size; i++)
