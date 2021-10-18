@@ -30,9 +30,9 @@ void operate(const char *v1, const char *v2, const char *operator)
     {
     case '+': result = n1 + n2; break;
     case '-': result = n1 - n2; break;
-    case '/': result = n1 / n2; break;
+    case '/': if(n2!=0.) result = n1 / n2; break;
     case '*': result = n1 * n2; break;
-    case '%': result = (long long)n1 % (long long)n2; break;
+    case '%': if((long long)n2!=0) result = (long long)n1 % (long long)n2; break;
     default:  error = 1;        break;
     }
 
