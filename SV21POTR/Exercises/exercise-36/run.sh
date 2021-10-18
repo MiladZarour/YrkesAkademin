@@ -1,0 +1,1 @@
+clear && gcc exercise-36.c -Wall -o out && ./out
