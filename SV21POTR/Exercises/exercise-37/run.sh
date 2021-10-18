@@ -6,3 +6,5 @@ gcc exercise-37.c -Wall -o out
 ./out 3 '*' 5
 ./out 33 % 10
 ./out 1 ? 1
+./out 300 % 0
+./out 222 / 0

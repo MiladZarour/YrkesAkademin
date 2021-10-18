@@ -20,29 +20,40 @@ For example:
 void operate(const char *v1, const char *v2, const char *operator)
 {
     char op = 0;
-    double n1=0, n2=0, result=0;
-    sscanf(v1, "%lf", &n1); // value 1
-    sscanf(v2, "%lf", &n2); // value 2
+    unsigned long long n1=0, n2=0, result=0;
+    sscanf(v1, "%llu", &n1); // value 1
+    sscanf(v2, "%llu", &n2); // value 2
     op = operator[0]; // operator
 
     int error = 0;
     switch (op)
     {
-    case '+': result = n1 + n2; break;
-    case '-': result = n1 - n2; break;
-    case '/': if(n2!=0.) result = n1 / n2; break;
-    case '*': result = n1 * n2; break;
-    case '%': if((long long)n2!=0) result = (long long)n1 % (long long)n2; break;
-    default:  error = 1;        break;
+    case '+':   result = n1 + n2; break;
+    case '-':   result = n1 - n2; break;
+    case '/':   if(n2)
+                    result = n1/n2;
+                else
+                {
+                    error = 1;
+                    printf("Error: Divide by 0\n");
+                }
+                break;
+    case '*':   result = n1 * n2; break;
+    case '%':   if(n2)
+                    result = n1%n2;
+                else
+                {
+                    error = 1;
+                    printf("Error: Divide by 0\n");
+                }
+                break;
+    default:    error = 1;
+                printf("Error: Undefined operator '%c'\n", op);
+                break;
     }
 
-    if(error)
-        printf("Error: wrong operator symbol\n");
-    else if(op=='%')
-        printf("%lld %c %lld = %lld\n", (long long)n1, op, (long long)n2, (long long)result);
-    else
-        printf("%f %c %f = %f\n", n1, op, n2, result);
-
+    if(!error)
+        printf("%llu %c %llu = %llu\n", n1, op, n2, result);
 }
 
 int main(int argc, char *argv[])
