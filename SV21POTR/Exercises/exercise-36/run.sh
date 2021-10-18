@@ -1,1 +1,1 @@
-clear && gcc exercise-36.c -Wall -o out && ./out
+clear && gcc exercise-36.c -Wall -lunity -o out && ./out
