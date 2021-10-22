@@ -1,15 +1,5 @@
-out
-main
-
-Assignments
-Resources
-0-Faroch-solutions
-
-.dSYM
-.vscode
-.plist
-.json
-
+*
 !*.c
 !*.h
 !*.sh
+!*.pdf
