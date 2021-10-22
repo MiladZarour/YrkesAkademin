@@ -50,34 +50,34 @@ const char *LVL_NAME[] = {
     "ok",
 };
 
-bool verify_digits_n(level_t level, unsigned digits, unsigned amount)
+bool verify_digits_n(level_t level, unsigned number, unsigned digits, unsigned amount)
 {
     // here we dceide if we want EXACT amount of digits or between [1 - amount]
-    if (digits>=1 && digits<=amount)
+    if(digits>=1 && digits<=amount)
     //if(digits==amount)
         return true;
 
     #if SHOW_LOG
-    printf("..level %d error -> %s: expected %d digits (inserted %d digits)\n", level, LVL_NAME[level], amount, digits);
+    char fmt[10], num[10];
+    sprintf(fmt, "%c%0dd", '%',amount);
+    sprintf(num, fmt, number);
+    printf("..level %d error -> %s: expected %d digits (inserted %d digits on number %s)\n", level, LVL_NAME[level], amount, digits, num);
     #endif
 
     return false;
 }
 
 // Simple digits verification
-bool verify_digits(level_t level, unsigned digits)
+bool verify_digits(level_t level, unsigned number, unsigned digits)
 {
-    switch (level)
+    switch(level)
     {
     case L_YYYY:
-        return verify_digits_n(level, digits, 4);
+        return verify_digits_n(level, number, digits, 4);
 
-    case L_MM: 
-    case L_DD: 
-    case L_HH:
-    case L_mm:
-    case L_ss:
-        return verify_digits_n(level, digits, 2);
+    case L_MM: case L_DD: 
+    case L_HH: case L_mm: case L_ss:
+        return verify_digits_n(level, number, digits, 2);
 
     case L_OK:
         return true;
@@ -88,7 +88,7 @@ bool verify_digits(level_t level, unsigned digits)
 
 bool verify_range_n(level_t level, unsigned number, unsigned n1, unsigned n2)
 {
-    if (number >= n1 && number <= n2)
+    if(number>=n1 && number<=n2)
         return true;
 
     #if SHOW_LOG
@@ -147,8 +147,13 @@ bool verify_range(level_t level, unsigned number, const datetime_t *dt)
 
 bool verify_delimiter_n(level_t level, char c, char *valid, unsigned number)
 {
-    // we take the NULL as a valid delimiter for all levels
-    if (c==0 || strchr(valid, c))
+    // we take the NULL as a valid delimiter for DD && mm
+    // if so, the result should be a warning (truncated parsing)
+    if(c==0 && (level==L_DD || level==L_mm))
+        return true;
+
+    // the other cases should fit in the format
+    if(strchr(valid, c))
         return true;
 
     #if SHOW_LOG
@@ -166,17 +171,19 @@ bool verify_delim(level_t level, char delim, unsigned number)
     {
     case L_YYYY:
     case L_MM:
-        return verify_delimiter_n(level, delim, "-\n", number);
+        return verify_delimiter_n(level, delim, "-", number);
 
     case L_DD:
-        return verify_delimiter_n(level, delim, " \n", number);
+        return verify_delimiter_n(level, delim, " ", number);
 
-    case L_HH: 
+    case L_HH:
+        return verify_delimiter_n(level, delim, ":", number);
+
     case L_mm:
-        return verify_delimiter_n(level, delim, ":\n", number);
+        return verify_delimiter_n(level, delim, ": ", number); // space is valid
 
     case L_ss:
-        return verify_delimiter_n(level, delim, " \n", number);
+        return verify_delimiter_n(level, delim, " ", number);
 
     case L_OK:
         return true;
@@ -213,6 +220,7 @@ bool parse_dt(datetime_t *dt, const char* str)
 {
     assert(str);
 
+    bool error = false;
     unsigned c, number=0, digits=0;
     level_t level = L_YYYY;
     int len = strlen(str);
@@ -235,20 +243,20 @@ bool parse_dt(datetime_t *dt, const char* str)
     // note the i<=len (i use the null as a delimiter)
     for(int i=0; level!=L_OK && i<=len; i++)
     {
-        c = i==len ? 0 : str[i];
+        c = i==len ? ' ' : str[i];
 
         // if is digit
         if (isdigit(c))
         {
             // build the number
             digits++;
-            number = number * 10 + c - '0';
+            number = number*10 + c - '0'; // shift left 1 digit and add the new digit to the right
         }
-        // if valid number (verify everything)
+        // if is not a digit, it should be a delimiter
         else 
-        if (verify_digits(level, digits) &&     // verify: amount of digits
-            verify_range(level, number, dt) &&  // verify: range of the number
-            verify_delim(level, c, number))     // verify: delimiter is the correct for the level
+        // but first verify the value of the number
+        if (verify_digits(level, number, digits) &&   // verify amount of digits
+            verify_range(level, number, dt))  // verify range of the number
         {
             #if SHOW_LOG
             // show internal information after verification: OK bla bla..
@@ -258,57 +266,95 @@ bool parse_dt(datetime_t *dt, const char* str)
             // update the result DT structure
             set_datetime_value(level, dt, number);
 
-            // prepare to build a new number
-            number = 0;
-            digits = 0;
-            // ..and increment to next level
-            level++;
+            // and now verify if delimiter is the correct for the level
+            if(verify_delim(level, c, number))
+            {
+                // prepare to build a new number
+                number = 0;
+                digits = 0;
+                // increment to next level
+                level++;
+            }
+            else
+            {
+                // error ..bye bye!
+                error = true;
+                break;
+            }
         }
         // if not valid
         else
         {
             // error ..bye bye!
+            error = true;
             break;
         }
     }
 
-    // missing TIME
-    if(level == L_HH)
+    // no error.. but warning?
+    if(!error)
     {
-        #if SHOW_LOG
-        printf("..level %d warning -> parsing truncated, missing values for TIME\n", level);
-        #endif
-        return true;
-    }
-    else // missing SECONDS
-    if(level == L_ss)
-    {
-        #if SHOW_LOG
-        printf("..level %d warning -> parsing truncated, missing value for SECONDS\n", level);
-        #endif
-        return true;
+        // missing TIME
+        if(level == L_HH)
+        {
+            #if SHOW_LOG
+            printf("..level %d warning -> parsing truncated, missing values for TIME\n", level);
+            #endif
+            return true;
+        }
+        else // missing SECONDS
+        if(level == L_ss)
+        {
+            #if SHOW_LOG
+            printf("..level %d warning -> parsing truncated, missing value for SECONDS\n", level);
+            #endif
+            return true;
+        }
     }
 
     return level == L_OK;
 }
 
+void test_dt(const char *str)
+{
+    datetime_t dt = {0};
+
+    if(parse_dt(&dt,str))
+    {
+        printf("The format is valid!\n");
+        printf("Result after parsing: %u-%02u-%02u %02d:%02d:%02d\n\n",
+                dt.year, dt.month, dt.day, dt.hour, dt.min, dt.sec);
+    }
+    else
+        printf("Format not valid\n\n");
+}
+
+void test()
+{
+    printf("\n\n\n\n\n");
+    test_dt("1975-02-12 10:15:35"); // ok
+    test_dt("1975-02-12 10:15"); // ok truncated
+    test_dt("1975-02-12"); // ok truncated
+    test_dt("1975-02-121"); // error: day digit
+    test_dt("1975-02-29"); // error: day range (february)
+    test_dt("1975-02-12 23"); // error: expecting delimiter
+    test_dt("1975-02-12 23:61:"); // error: minutes range
+    test_dt("1975-02-12 23:59:61"); // error: seconds range
+    test_dt("75-2-7 1:15:5"); // ok
+}
+
 int main()
 {
+    test();
+    /*
     datetime_t dt = {0};
     printf("Enter date and time [YYYY-MM-DD HH:mm:ss]:\n");
 
     char str[200];
     fgets(str, 200, stdin);
     str[strlen(str)-1] = 0;
-    
-    if(parse_dt(&dt,str))
-    {
-        printf("The format is valid!\n");
-        printf("Result after parsing: %u-%02u-%02u %02d:%02d:%02d\n",
-                dt.year, dt.month, dt.day, dt.hour, dt.min, dt.sec);
-    }
-    else
-        printf("Format not valid\n");
 
+    test_dt(str);
+    */
     return 0;
 }
