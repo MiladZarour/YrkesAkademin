@@ -23,10 +23,18 @@ int main()
     for (int j=0; j<SIZE2; j++)
         *(*(arr+i)+j) = rand() % 100;
         //arr[i][j] = rand() % 100;
-        //*(ptr+i*SIZE2+j) = rand() % 100;
 
-    // print using pointers
-    printf("\nA) Matrix (using **) on arr:\n");
+    // print using index to TEST that the answers are correct and equivalent
+    printf("\nA) Matrix: using [][] on arr\n");
+    for (int i=0; i<SIZE1; i++)
+    {
+        for (int j=0; j<SIZE2; j++)
+            printf("%4d", arr[i][j]);
+
+        printf("\n");
+    }
+
+    printf("\nB) Matrix: using (**) on arr\n");
     for (int i=0; i<SIZE1; i++)
     {
         for (int j=0; j<SIZE2; j++)
@@ -35,8 +43,7 @@ int main()
         printf("\n");
     }
 
-    // print using pointers
-    printf("\nB) Matrix (using *) on ptr:\n");
+    printf("\nC) Matrix: using (*) on ptr\n");
     for (int i=0; i<SIZE1; i++)
     {
         for (int j=0; j<SIZE2; j++)
@@ -45,15 +52,38 @@ int main()
         printf("\n");
     }
 
-    // print using index to TEST that the answer is correct and equivalent
-    printf("\nC) Matrix (using [][] on arr):\n");
+    printf("\nD) Matrix: using [] on ptr:\n");
     for (int i=0; i<SIZE1; i++)
     {
         for (int j=0; j<SIZE2; j++)
-            printf("%4d", arr[i][j]);
+            printf("%4d", ptr[i*SIZE2+j]);
 
         printf("\n");
     }
+
+    printf("\nE) Matrix: using combination *[] on arr:\n");
+    for (int i=0; i<SIZE1; i++)
+    {
+        for (int j=0; j<SIZE2; j++)
+            printf("%4d", *(arr[i]+j));
+
+        printf("\n");
+    }
+
+    printf("\nF) Matrix: using combination *[] on ptr:\n");
+    for (int i=0; i<SIZE1; i++)
+    {
+        for (int j=0; j<SIZE2; j++)
+            printf("%4d", *(&ptr[i*SIZE2]+j));
+
+        printf("\n");
+    }
+
+    // In my opinion, options A & D are the only ones
+    // that are worth to remember. Maybe use one minute
+    // to dig into B & C. Options E & F are just way too
+    // complicated to understand when we are reading the
+    // flow of the code.
 
     return 0;
 }
