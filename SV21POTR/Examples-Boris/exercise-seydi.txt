@@ -29,6 +29,7 @@ Pay attention to:
 "10 +20"
 " 10+20"
 "30.5-.5"
+"1.2.3+4"
 "50/0"
 ...if you are playing with negatives:
 "-20-10"
